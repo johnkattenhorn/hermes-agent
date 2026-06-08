@@ -76,6 +76,7 @@ import json
 import os
 import re
 import secrets
+import shlex
 import shutil
 import sqlite3
 import subprocess
@@ -6859,7 +6860,11 @@ def _default_spawn(
     # attributed correctly regardless of how the child loads config.
     env["HERMES_PROFILE"] = profile_arg
 
+    # Phase 1: optional resource-isolation wrapper (cgroup scope). Empty by
+    # default (no-op); set HERMES_KANBAN_WORKER_WRAPPER to a wrapper-script path
+    # to run each worker inside a memory/CPU-capped systemd scope.
     cmd = [
+        *shlex.split(os.environ.get("HERMES_KANBAN_WORKER_WRAPPER", "").strip()),
         *_resolve_hermes_argv(),
         "-p", profile_arg,
         # Worker subprocesses switch to a profile-scoped HERMES_HOME above,
