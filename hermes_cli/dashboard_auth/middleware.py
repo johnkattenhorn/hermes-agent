@@ -211,8 +211,12 @@ def _auto_sso_response(request: Request) -> Response | None:
 
     provider = providers[0]
     if getattr(provider, "supports_password", False):
+        # Fork patch: a single password-only provider (BasicAuthProvider)
+        # has no OAuth redirect — start_login() raises NotImplementedError,
+        # so the auto-SSO bounce to /auth/login 500s. Fall through to the
+        # /login form instead. Upstream _auto_sso_response guards only on
+        # provider COUNT, not capability. Carry: report upstream.
         return None
-
     prefix = prefix_from_request(request)
     next_param = _safe_next_target(request)
     from urllib.parse import quote
